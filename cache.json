@@ -1,0 +1,89 @@
+{
+    "date": "2019-11-24",
+    "tatort": [
+        {
+            "day": 24,
+            "month": 11,
+            "weekday": "Sonntag",
+            "time": "20:15 Uhr",
+            "hour": "20",
+            "minute": "15",
+            "title": "Baum f\u00e4llt",
+            "city": "Wien",
+            "inspectors": "Eisner und Fellner",
+            "link": "https://www.daserste.de/unterhaltung/krimi/tatort/sendung/baum-faellt-100.html"
+        },
+        {
+            "day": "01",
+            "month": "12",
+            "weekday": "Sonntag",
+            "time": "20:15 Uhr",
+            "hour": "20",
+            "minute": "15",
+            "title": "Querschl\u00e4ger",
+            "city": "Hamburg",
+            "inspectors": "Falke und Grosz ",
+            "link": "https://www.daserste.de/unterhaltung/krimi/tatort/sendung/querschlaeger-100.html"
+        },
+        {
+            "day": "06",
+            "month": "12",
+            "weekday": "Freitag",
+            "time": "22:00 Uhr",
+            "hour": "22",
+            "minute": "00",
+            "title": "Dunkle Zeit",
+            "city": "Hamburg",
+            "inspectors": "Falke und Grosz ",
+            "link": "https://www.daserste.de/unterhaltung/krimi/tatort/sendung/dunkle-zeit-102.html"
+        },
+        {
+            "day": "13",
+            "month": "12",
+            "weekday": "Freitag",
+            "time": "22:00 Uhr",
+            "hour": "22",
+            "minute": "00",
+            "title": "Mitgehangen",
+            "city": "K\u00f6ln",
+            "inspectors": "Ballauf und Schenk",
+            "link": "https://www.daserste.de/unterhaltung/krimi/tatort/sendung/mitgehangen-104.html"
+        },
+        {
+            "day": "15",
+            "month": "12",
+            "weekday": "Sonntag",
+            "time": "20:15 Uhr",
+            "hour": "20",
+            "minute": "15",
+            "title": "Borowski und das Haus am Meer",
+            "city": "Kiel",
+            "inspectors": "Borowski und Sahin",
+            "link": "https://www.daserste.de/unterhaltung/krimi/tatort/sendung/borowski-und-das-haus-am-meer-100.html"
+        },
+        {
+            "day": "20",
+            "month": "12",
+            "weekday": "Freitag",
+            "time": "22:10 Uhr",
+            "hour": "22",
+            "minute": "10",
+            "title": "Klingelingeling",
+            "city": "M\u00fcnchen",
+            "inspectors": "Batic und Leitmayr mit Team",
+            "link": "https://www.daserste.de/unterhaltung/krimi/tatort/sendung/klingelingeling-104.html"
+        },
+        {
+            "day": "22",
+            "month": "12",
+            "weekday": "Sonntag",
+            "time": "21:45 Uhr",
+            "hour": "21",
+            "minute": "45",
+            "title": "Die robuste Roswita",
+            "city": "Weimar",
+            "inspectors": "Dorn und Lessing",
+            "link": "https://www.daserste.de/unterhaltung/krimi/tatort/sendung/die-robuste-roswita-126.html"
+        }
+    ]
+}

@@ -1,5 +1,8 @@
-import tatort
+import unittest
+
+import .tatort
 import asyncio
+
 
 async def main():
 	text = await tatort.getTatort()

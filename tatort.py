@@ -77,12 +77,17 @@ async def getAllTatortSonntag():
             sonntaglist.append(episode)
     return sonntaglist
 
+async def getWebsite():
+    result = ""
+    async with aiohttp.ClientSession() as session:
+        async with session.get("https://www.daserste.de/unterhaltung/krimi/tatort/vorschau/index.html") as response:
+            result = await response.text()
+    return result
+
 async def parseWebsite(requestdate):
     content = ""
     print("Tatort-Website wird geladen...")
-    async with aiohttp.ClientSession() as session:
-        async with session.get("https://www.daserste.de/unterhaltung/krimi/tatort/vorschau/index.html") as response:
-            content = await response.text()
+    content = getWebsite()
 
     print("Tatort-Website wurde geladen.")
     soup = BeautifulSoup(content, "html.parser")

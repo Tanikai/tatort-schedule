@@ -1,10 +1,10 @@
-import aiohttp
+import urllib.request
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-import json
 
 # Global
-cache_tatort = {}
+TATORT_URL = "https://www.daserste.de/unterhaltung/krimi/tatort/vorschau/index.html"
+
 switch_weekday_num = {
     0: "Montag",
     1: "Dienstag",
@@ -25,137 +25,96 @@ switch_weekday_abr = {
     "Mo": "Montag"
 }
 
-async def getTatort():
-    global cache_tatort
-    requesttime = datetime.now()
-    requestdate = requesttime.date()
 
-    # Wenn der Cache leer ist, wird die JSON-Datei geladen
-    if cache_tatort == {}:
-        print(">>>Cache ist leer.")
-        with open("cache.json", "r") as jsoncache:
-            print(">>>Cache aus JSON-Datei wird geladen.")
-            cache_tatort = json.load(jsoncache)
-            jsoncache.close()
-            # Wenn die Informationen aus der JSON-Datei veraltet sind bzw. das Datum ungleich ist, wird die Website neu geparst
-            try:
-                if cache_tatort["date"] != requestdate.strftime("%Y-%m-%d"):
-                    print(">>>Datum von Abfrage und Cache sind ungleich.")
-                    return await parseWebsite(requestdate)
-                # Falls nicht, wird der Cache ausgegeben.
-                else:
-                    print(">>>Datum von Abfrage und Cache ist gleich. Cache wird ausgegeben.")
-                    return cache_tatort["tatort"]
+def get_tatort_schedule():
+    website = get_tatort_html()
+    return parse_tatort_website(website)
 
-            except:
-                print("Fehler beim lesen der JSON-Datei.")
-                return await parseWebsite(requestdate)
 
-    # Wenn im Cache etwas drinsteht
-    else:
-        print(">>>Cache-Variable ist belegt.")
-        # Wenn das Datum nicht gleich ist, soll die Website geparst werden
-        if cache_tatort["date"] != requestdate.strftime("%Y-%m-%d"):
-            print(">>>Datum von Abfrage und Cache sind ungleich.")
-            return await parseWebsite(requestdate)
-        # Wenn das Datum gleich ist, kann der Cache zurückgegeben werden
-        else:
-            print(">>>Datum von Abfrage und Cache ist gleich. Cache wird ausgegeben.")
-            return cache_tatort["tatort"]
+def get_tatort_html() -> str:
+    html_file = ""
+    with urllib.request.urlopen(TATORT_URL) as response:
+        html_file = response.read().decode("utf-8")
+    return html_file
 
-async def getTatortSonntag():
-    tatortlist = await getTatort()
-    for episode in tatortlist:
-        if episode["weekday"] == "Sonntag":
-            return episode
 
-async def getAllTatortSonntag():
-    tatortlist = await getTatort()
-    sonntaglist = []
-    for episode in tatortlist:
-        if episode["weekday"] == "Sonntag":
-            sonntaglist.append(episode)
-    return sonntaglist
+def parse_tatort_website(html: str):
+    soup = BeautifulSoup(html, "html.parser")  # BSoup-Object for site parsing
+    # 0:"nächste Erstausstrahlung" 1:"im Ersten" 2:"in den Dritten" 3:"auf ONE" 4:"Tatort in Ihrem dritten Programm"
+    tatort_linklists = soup.find_all("div", class_="linklist")
 
-async def getWebsite():
-    result = ""
-    async with aiohttp.ClientSession() as session:
-        async with session.get("https://www.daserste.de/unterhaltung/krimi/tatort/vorschau/index.html") as response:
-            result = await response.text()
-    return result
+    # Timestamp of website request is between </body> and </html> tag
+    # </body><!-- stage-4.deo @ Sun Feb 07 09:16:08 CET 2021 --></html>
+    comment = soup.html.contents[len(soup.html.contents)-2]
+    at_index = comment.find("@")
+    timestamp_text = comment[at_index+2:-1]
+    request_timestamp = datetime.strptime(
+        timestamp_text, "%a %b %d %H:%M:%S CET %Y")
 
-async def parseWebsite(requestdate):
-    content = ""
-    print("Tatort-Website wird geladen...")
-    content = getWebsite()
+    tatort_im_ersten_list = tatort_linklists[1].find_all("a")
+    return parse_tatort_linklist(tatort_im_ersten_list, request_timestamp)
 
-    print("Tatort-Website wurde geladen.")
-    soup = BeautifulSoup(content, "html.parser")
-    tatort_htmllinklist = soup.find_all("div", class_="linklist")
 
-    tatort_cleanhtmllinklist = tatort_htmllinklist[1]
-    tatort_links = tatort_cleanhtmllinklist.find_all("a")
-
-    tatortdict = []
-    for tag in tatort_links:
-        # x ist ein tatObject
-        x = {}
-
-        # Hinweis zu content:
-        # In dieser Variable befinden sich der Text, der sich zwischen <a> und </a> befindet.
-        content = str(tag.string)
+def parse_tatort_linklist(schedule_list, request_timestamp):
+    schedule = []
+    for link in schedule_list:
+        entry = {}
+        # Example for a link text:
+        # So., 14.02. | 20:15 Uhr | Hetzjagd (Odenthal und Stern  (Ludwigshafen))
 
         # Formatierung der Liste content_split:
         # [0]: Wochentag und Datum (Bsp.: "So, 21.06.") ODER "Heute" oder "Morgen"
         # [1]: Uhrzeit (Bsp.: "20:15 Uhr")
         # [2]: Titel, Kommissare und Stadt (Bsp.: "Letzte Tage (Blum und Perlmann (Konstanz))")
-        content_split = content.split(" | ")
+        date_text = time_text = title = ""
+        split_link = str(link.string).split(" | ")
+        date_text = split_link[0]
+        time_text = split_link[1]
+        title = split_link[2]
 
-        if content_split[0] == "Heute":
-            x["day"] = requestdate.day
-            x["month"] = requestdate.month
-            weekdaynum = requestdate.weekday()
-            x["weekday"] = switch_weekday_num[weekdaynum]
+        append_date(date_text, entry, request_timestamp)
+        append_time(time_text, entry)
+        append_title_info(title, entry)
+        entry["link"] = "https://www.daserste.de" + str(link["href"])
 
-        elif content_split[0] == "Morgen":
-            tomorrow = requestdate + timedelta(days=1)
-            x["day"] = tomorrow.day
-            x["month"] = tomorrow.month
-            weekdaynum = tomorrow.weekday()
-            x["weekday"] = switch_weekday_num[weekdaynum]
+        schedule.append(entry)
+    return schedule
 
-        else:
-            date = content_split[0].split(", ")
-            date_split = date[1].split(".")
-            x["day"] = date_split[0]
-            x["month"] = date_split[1]
-            x["weekday"] = switch_weekday_abr[date[0]]
 
-        x["time"] = content_split[1]
-        x["hour"] = content_split[1][0:2]
-        x["minute"] = content_split[1][3:5]
+def append_date(date_text: str, entry, request_date):
+    if "Heute" in date_text:
+        entry["day"] = request_date.day
+        entry["month"] = request_date.month
+        weekdaynum = request_date.weekday()
+        entry["weekday"] = switch_weekday_num[weekdaynum]
 
-        content_title = content_split[2]
-        content_title = content_title[:content_title.find("(")-1]
-        x["title"] = content_title
+    elif "Morgen" in date_text:
+        with request_date + timedelta(days=1) as date:
+            entry["day"] = date.day
+            entry["month"] = date.month
+            weekdaynum = date.weekday()
+            entry["weekday"] = switch_weekday_num[weekdaynum]
 
-        content_bracket = content_split[2]
-        content_bracket = content_bracket[content_bracket.find("(")+1:len(content_bracket)-1]
+    else:
+        date = date_text.split(", ")
+        date_split = date[1].split(".")
+        entry["day"] = date_split[0]
+        entry["month"] = date_split[1]
+        entry["weekday"] = switch_weekday_abr[date[0][:-1]]
 
-        content_city = content_bracket[content_bracket.rfind("(")+1:len(content_bracket)-1]
-        x["city"] = content_city
 
-        content_inspectors = content_bracket[:-len(content_city)-4] # Klammer*2, Leerzeichen, -1
-        x["inspectors"] = content_inspectors
+def append_time(time_text: str, entry):
+    entry["time"] = time_text
+    entry["hour"] = time_text[0:2]
+    entry["minute"] = time_text[3:5]
 
-        x["link"] = "https://www.daserste.de" + str(tag["href"])
-        tatortdict.append(x)
-        print(x)
 
-    with open("cache.json", "w") as jsoncache:
-        cache_tatort["date"] = requestdate.strftime("%Y-%m-%d")
-        cache_tatort["tatort"] = tatortdict
-        json.dump(cache_tatort, jsoncache, indent=4)
-        jsoncache.close()
+def append_title_info(title_text: str, entry):
+    entry["title"] = title_text[:title_text.find("(")-1]
 
-    return tatortdict
+    bracket_text = title_text[title_text.find("(")+1:len(title_text)-1]
+
+    city_text = bracket_text[bracket_text.rfind("(")+1:len(bracket_text)-1]
+    entry["city"] = city_text
+
+    entry["inspectors"] = bracket_text[:-len(city_text)-4]

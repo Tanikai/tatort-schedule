@@ -26,7 +26,7 @@ switch_weekday_abr = {
 }
 
 
-def get_tatort_schedule():
+def get_tatort():
     website = get_tatort_html()
     return parse_tatort_website(website)
 

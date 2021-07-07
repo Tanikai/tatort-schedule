@@ -48,37 +48,40 @@ def parse_tatort_website(html: str):
     comment = soup.html.contents[len(soup.html.contents)-2]
     at_index = comment.find("@")
     timestamp_text = comment[at_index+2:-1]
-    request_timestamp = datetime.strptime(
-        timestamp_text, "%a %b %d %H:%M:%S CET %Y")
+    # FIXME: Proper handling of Timezone
+    request_timestamp = datetime.strptime( timestamp_text, "%a %b %d %H:%M:%S CEST %Y")
 
     tatort_im_ersten_list = tatort_linklists[1].find_all("a")
-    return parse_tatort_linklist(tatort_im_ersten_list, request_timestamp)
+    return parse_schedule(tatort_im_ersten_list, request_timestamp)
 
 
-def parse_tatort_linklist(schedule_list, request_timestamp):
+def parse_schedule(schedule_list, request_timestamp):
     schedule = []
-    for link in schedule_list:
-        entry = {}
-        # Example for a link text:
-        # So., 14.02. | 20:15 Uhr | Hetzjagd (Odenthal und Stern  (Ludwigshafen))
-
-        # Formatierung der Liste content_split:
-        # [0]: Wochentag und Datum (Bsp.: "So, 21.06.") ODER "Heute" oder "Morgen"
-        # [1]: Uhrzeit (Bsp.: "20:15 Uhr")
-        # [2]: Titel, Kommissare und Stadt (Bsp.: "Letzte Tage (Blum und Perlmann (Konstanz))")
-        date_text = time_text = title = ""
-        split_link = str(link.string).split(" | ")
-        date_text = split_link[0]
-        time_text = split_link[1]
-        title = split_link[2]
-
-        append_date(date_text, entry, request_timestamp)
-        append_time(time_text, entry)
-        append_title_info(title, entry)
-        entry["link"] = "https://www.daserste.de" + str(link["href"])
-
-        schedule.append(entry)
+    for entry in schedule_list:
+        schedule.append(parse_entry(entry, request_timestamp))
     return schedule
+
+
+def parse_entry(schedule_entry, request_timestamp):
+    entry = {}
+    # Example for a link text:
+    # So., 14.02. | 20:15 Uhr | Hetzjagd (Odenthal und Stern  (Ludwigshafen))
+
+    # Formatierung der Liste content_split:
+    # [0]: Wochentag und Datum (Bsp.: "So, 21.06.") ODER "Heute" oder "Morgen"
+    # [1]: Uhrzeit (Bsp.: "20:15 Uhr")
+    # [2]: Titel, Kommissare und Stadt (Bsp.: "Letzte Tage (Blum und Perlmann (Konstanz))")
+    date_text = time_text = title = ""
+    split_link = str(schedule_entry.string).split(" | ")
+    date_text = split_link[0]
+    time_text = split_link[1]
+    title = split_link[2]
+
+    append_date(date_text, entry, request_timestamp)
+    append_time(time_text, entry)
+    append_title_info(title, entry)
+    entry["link"] = "https://www.daserste.de" + str(schedule_entry["href"])
+    return entry
 
 
 def append_date(date_text: str, entry, request_date):
@@ -118,3 +121,7 @@ def append_title_info(title_text: str, entry):
     entry["city"] = city_text
 
     entry["inspectors"] = bracket_text[:-len(city_text)-4]
+
+
+if __name__ == "__main__":
+    print(get_tatort())

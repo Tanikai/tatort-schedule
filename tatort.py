@@ -1,6 +1,8 @@
 import urllib.request
+import dateutil.parser
+import dateutil.tz
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 # Global
 TATORT_URL = "https://www.daserste.de/unterhaltung/krimi/tatort/vorschau/index.html"
@@ -48,8 +50,13 @@ def parse_tatort_website(html: str):
     comment = soup.html.contents[len(soup.html.contents)-2]
     at_index = comment.find("@")
     timestamp_text = comment[at_index+2:-1]
-    # FIXME: Proper handling of Timezone
-    request_timestamp = datetime.strptime( timestamp_text, "%a %b %d %H:%M:%S CEST %Y")
+
+    tzmapping = {'CET': dateutil.tz.gettz('Europe/Berlin'),
+                 'CEST': dateutil.tz.gettz('Europe/Berlin')}
+    request_timestamp = dateutil.parser.parse(
+        timestamp_text, tzinfos=tzmapping)
+
+    # TODO: If Date cannot be parsed, use timestamp now
 
     tatort_im_ersten_list = tatort_linklists[1].find_all("a")
     return parse_schedule(tatort_im_ersten_list, request_timestamp)

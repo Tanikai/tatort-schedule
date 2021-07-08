@@ -99,11 +99,11 @@ def append_date(date_text: str, entry, request_date):
         entry["weekday"] = switch_weekday_num[weekdaynum]
 
     elif "Morgen" in date_text:
-        with request_date + timedelta(days=1) as date:
-            entry["day"] = date.day
-            entry["month"] = date.month
-            weekdaynum = date.weekday()
-            entry["weekday"] = switch_weekday_num[weekdaynum]
+        request_date += timedelta(days=1)
+        entry["day"] = request_date.day
+        entry["month"] = request_date.month
+        weekdaynum = request_date.weekday()
+        entry["weekday"] = switch_weekday_num[weekdaynum]
 
     else:
         date = date_text.split(", ")

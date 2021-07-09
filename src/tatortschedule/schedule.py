@@ -29,11 +29,11 @@ switch_weekday_abr = {
 
 
 def get_tatort():
-    website = get_tatort_html()
+    website = load_tatort_website()
     return parse_tatort_website(website)
 
 
-def get_tatort_html() -> str:
+def load_tatort_website() -> str:
     html_file = ""
     with urllib.request.urlopen(TATORT_URL) as response:
         html_file = response.read().decode("utf-8")
@@ -56,7 +56,7 @@ def parse_tatort_website(html: str):
     request_timestamp = dateutil.parser.parse(
         timestamp_text, tzinfos=tzmapping)
 
-    # TODO: If Date cannot be parsed, use timestamp now
+    # TODO: If Date cannot be parsed, use current timestamp
 
     tatort_im_ersten_list = tatort_linklists[1].find_all("a")
     return parse_schedule(tatort_im_ersten_list, request_timestamp)

@@ -35,9 +35,9 @@ Working installation of Python 3.
 Import the tatort.py package and call the get_tatort function:
 
 ```python
-import tatort
+from tatortschedule import schedule
 
-schedule = tatort.get_tatort()
+schedule = schedule.get_tatort()
 ```
 
 ## License

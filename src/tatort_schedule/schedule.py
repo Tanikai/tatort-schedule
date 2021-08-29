@@ -28,16 +28,21 @@ def parse_tatort_website(html: str):
 
     # Timestamp of website request is between </body> and </html> tag
     # </body><!-- stage-4.deo @ Sun Feb 07 09:16:08 CET 2021 --></html>
-    comment = soup.html.contents[len(soup.html.contents)-2]
-    at_index = comment.find("@")
-    timestamp_text = comment[at_index+2:-1]
+    for line in reversed(soup.html.contents):
+        at_index = line.find("@")  # look for comment
+        if at_index == -1:
+            continue
+        else:  # valid line: ' stage-3.deo @ Sun Aug 29 17:40:15 CEST 2021 '
+            timestamp_text = line[at_index+2:-1]
+            break
 
     tzmapping = {'CET': dateutil.tz.gettz('Europe/Berlin'),
                  'CEST': dateutil.tz.gettz('Europe/Berlin')}
-    request_timestamp = dateutil.parser.parse(
-        timestamp_text, tzinfos=tzmapping)
-
-    # TODO: If Date cannot be parsed, use current timestamp
+    try:
+        request_timestamp = dateutil.parser.parse(
+            timestamp_text, tzinfos=tzmapping)
+    except Exception as e:
+        request_timestamp = datetime.now()
 
     tatort_im_ersten_list = tatort_linklists[1].find_all("a")
     return parse_schedule(tatort_im_ersten_list, request_timestamp)

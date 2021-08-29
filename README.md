@@ -38,16 +38,11 @@ For each schedule element, a dictionary with the following keys is returned:
 
 | Key | Example Value |
 | --- | --------------|
-| day | 9 |
-| month | 7 |
-| weekday | Freitag |
-| time | 22:15 Uhr |
-| hour | 22 |
-| minute | 15 |
-| title | Mord Ex Machina |
-| city | Saarbrücken |
-| inspectors | Stellbrink und Marx |
-| link | [https://www.daserste.de/unterhaltung/krimi/tatort/sendung/mord-ex-machina-104.html](https://www.daserste.de/unterhaltung/krimi/tatort/sendung/mord-ex-machina-104.html) |
+| title | "Mord Ex Machina" |
+| city | "Saarbrücken" |
+| inspectors | "Stellbrink und Marx" |
+| time | "2021-07-09T22:15:00+02:00" |
+| link | "[https://www.daserste.de/unterhaltung/krimi/tatort/sendung/mord-ex-machina-104.html](https://www.daserste.de/unterhaltung/krimi/tatort/sendung/mord-ex-machina-104.html)" |
 
 ## License
 

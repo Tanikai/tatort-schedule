@@ -9,7 +9,7 @@ from datetime import timedelta
 TATORT_URL = "https://www.daserste.de/unterhaltung/krimi/tatort/vorschau/index.html"
 
 
-def get_tatort():
+def get_tatort() -> [dict]:
     """
     Returns the current schedule for Tatort.
     """
@@ -27,7 +27,7 @@ def load_tatort_website() -> str:
     return html_file
 
 
-def parse_tatort_website(html: str):
+def parse_tatort_website(html: str) -> [dict]:
     """
     >>> site = open("../../tests/testdata/20210209.html", "r").read()
     >>> schedule = parse_tatort_website(site)
@@ -67,23 +67,23 @@ def parse_tatort_website(html: str):
     return schedule_list
 
 
-def _parse_row(schedule_text: str, request_timestamp):
+def _parse_row(schedule_text: str, request_timestamp: datetime.datetime) -> dict:
     """
     Parses a row in the Tatort schedule, for example:
     >>> entry_string = "So., 14.02. | 20:15 Uhr | Hetzjagd (Odenthal und Stern  (Ludwigshafen))"
 
     A request timestamp has to be passed into the function, because the first column can contain 'Heute' or 'Morgen' (today and tomorrow respectively)
     >>> request_ts = datetime.datetime(2021, 2, 7, 9, 16, 8, 0, dateutil.tz.gettz('Europe/Berlin'))
-    >>> myentry = _parse_row(entry_string, request_ts)
+    >>> entry = _parse_row(entry_string, request_ts)
 
     The results are returned in a dictionary:
-    >>> myentry["time"]
+    >>> entry["time"]
     '2021-02-14T20:15:00+01:00'
-    >>> myentry["title"]
+    >>> entry["title"]
     'Hetzjagd'
-    >>> myentry["city"]
+    >>> entry["city"]
     'Ludwigshafen'
-    >>> myentry["inspectors"]
+    >>> entry["inspectors"]
     'Odenthal und Stern'
     """
     columns = schedule_text.split(" | ")
@@ -129,10 +129,10 @@ def _parse_datetime(date_text: str, time_text: str, request_ts: datetime.datetim
     hour = int(time_text[0:2])
     minute = int(time_text[3:5])
 
-    return datetime.datetime(2021, month, day, hour, minute, 0, 0, request_date.tzinfo).isoformat()
+    return datetime.datetime(2021, month, day, hour, minute, 0, 0, request_ts.tzinfo).isoformat()
 
 
-def _parse_title(title_text: str):
+def _parse_title(title_text: str) -> dict:
     """
     Appends episode info to the entry parameter.
     """

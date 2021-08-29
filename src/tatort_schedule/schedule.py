@@ -32,7 +32,7 @@ def parse_tatort_website(html: str):
     >>> site = open("../../tests/testdata/20210209.html", "r").read()
     >>> schedule = parse_tatort_website(site)
     >>> schedule[0]
-    {'time': '2021-02-07T20:15:00+01:00', 'title': 'Rettung so nah', 'city': 'Dresden', 'inspectors': 'Gorniak, Winkler und Schnabel', 'link': 'https://www.daserste.de/unterhaltung/krimi/tatort/sendung/rettung-so-nah-100.html'}
+    {'title': 'Rettung so nah', 'city': 'Dresden', 'inspectors': 'Gorniak, Winkler und Schnabel', 'time': '2021-02-07T20:15:00+01:00', 'link': 'https://www.daserste.de/unterhaltung/krimi/tatort/sendung/rettung-so-nah-100.html'}
     """
     soup = BeautifulSoup(html, "html.parser")  # BSoup-Object for site parsing
     # 0:"nächste Erstausstrahlung" 1:"im Ersten" 2:"in den Dritten" 3:"auf ONE" 4:"Tatort in Ihrem dritten Programm"
@@ -57,58 +57,52 @@ def parse_tatort_website(html: str):
         request_timestamp = datetime.now()
 
     tatort_im_ersten_list = tatort_linklists[1].find_all("a")
-    return parse_schedule(tatort_im_ersten_list, request_timestamp)
+    schedule_list = []
+    for link in tatort_im_ersten_list:
+        entry = _parse_row(link.string, request_timestamp)
+        entry["link"] = link["href"]
+        if not "https://www.daserste.de" in entry["link"]:
+            entry["link"] = "https://www.daserste.de" + entry["link"]
+        schedule_list.append(entry)
+    return schedule_list
 
 
-def parse_schedule(schedule_list, request_timestamp):
+def _parse_row(schedule_text: str, request_timestamp):
     """
-    Parses a list of schedule strings.
+    Parses a row in the Tatort schedule, for example:
+    >>> entry_string = "So., 14.02. | 20:15 Uhr | Hetzjagd (Odenthal und Stern  (Ludwigshafen))"
+
+    A request timestamp has to be passed into the function, because the first column can contain 'Heute' or 'Morgen' (today and tomorrow respectively)
+    >>> request_ts = datetime.datetime(2021, 2, 7, 9, 16, 8, 0, dateutil.tz.gettz('Europe/Berlin'))
+    >>> myentry = _parse_row(entry_string, request_ts)
+
+    The results are returned in a dictionary:
+    >>> myentry["time"]
+    '2021-02-14T20:15:00+01:00'
+    >>> myentry["title"]
+    'Hetzjagd'
+    >>> myentry["city"]
+    'Ludwigshafen'
+    >>> myentry["inspectors"]
+    'Odenthal und Stern'
     """
-    schedule = []
-    for entry in schedule_list:
-        schedule.append(parse_entry(entry, request_timestamp))
-    return schedule
-
-
-def parse_entry(schedule_entry, request_timestamp):
-    """
-    Parses a schedule string and returns a dict containing the schedule information.
-    """
-    entry = {}
-    # Example for a link text:
-    # So., 14.02. | 20:15 Uhr | Hetzjagd (Odenthal und Stern  (Ludwigshafen))
-
-    # Formatierung der Liste content_split:
-    # [0]: Wochentag und Datum (Bsp.: "So, 21.06.") ODER "Heute" oder "Morgen"
-    # [1]: Uhrzeit (Bsp.: "20:15 Uhr")
-    # [2]: Titel, Kommissare und Stadt (Bsp.: "Letzte Tage (Blum und Perlmann (Konstanz))")
-    date_text = time_text = title = ""
-    split_link = str(schedule_entry.string).split(" | ")
-    date_text = split_link[0]
-    time_text = split_link[1]
-    title = split_link[2]
-
-    append_datetime(date_text, time_text, entry, request_timestamp)
-    append_title_info(title, entry)
-    entry["link"] = str(schedule_entry["href"])
-    if not "https://www.daserste.de" in entry["link"]:
-        entry["link"] = "https://www.daserste.de" + entry["link"]
+    columns = schedule_text.split(" | ")
+    entry = _parse_title(columns[2])
+    entry["time"] = _parse_datetime(columns[0], columns[1], request_timestamp)
     return entry
 
 
-def append_datetime(date_text: str, time_text: str, entry, request_date):
+def _parse_datetime(date_text: str, time_text: str, request_date):
     """
     Appends datetime information to the entry parameter.
     """
     if "Heute" in date_text:
         day = int(request_date.day)
         month = int(request_date.month)
-
     elif "Morgen" in date_text:
         tomorrow = request_date + timedelta(days=1)
         day = int(tomorrow.day)
         month = int(tomorrow.month)
-
     else:
         date = date_text.split(", ")
         date_split = date[1].split(".")
@@ -118,24 +112,26 @@ def append_datetime(date_text: str, time_text: str, entry, request_date):
     hour = int(time_text[0:2])
     minute = int(time_text[3:5])
 
-    entry["time"] = datetime.datetime(
-        2021, month, day, hour, minute, 0, 0, request_date.tzinfo).isoformat()
+    return datetime.datetime(2021, month, day, hour, minute, 0, 0, request_date.tzinfo).isoformat()
 
 
-def append_title_info(title_text: str, entry):
+def _parse_title(title_text: str):
     """
     Appends episode info to the entry parameter.
     """
-    entry["title"] = title_text[:title_text.find("(")-1]
+    title_info = {}
+    title_info["title"] = title_text[:title_text.find("(")-1]
 
     bracket_text = title_text[title_text.find("(")+1:len(title_text)-1]
 
     city_text = bracket_text[bracket_text.rfind("(")+1:len(bracket_text)-1]
-    entry["city"] = city_text
+    title_info["city"] = city_text
 
-    entry["inspectors"] = bracket_text[:-len(city_text)-4]
+    title_info["inspectors"] = bracket_text[:-len(city_text)-4]
+    return title_info
 
 
 if __name__ == "__main__":
+    get_tatort()
     import doctest
     doctest.testmod()

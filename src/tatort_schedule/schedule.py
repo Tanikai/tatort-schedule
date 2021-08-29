@@ -72,7 +72,9 @@ def parse_entry(schedule_entry, request_timestamp):
 
     append_datetime(date_text, time_text, entry, request_timestamp)
     append_title_info(title, entry)
-    entry["link"] = "https://www.daserste.de" + str(schedule_entry["href"])
+    entry["link"] = str(schedule_entry["href"])
+    if not "https://www.daserste.de" in entry["link"]:
+        entry["link"] = "https://www.daserste.de" + entry["link"]
     return entry
 
 

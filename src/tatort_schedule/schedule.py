@@ -84,39 +84,33 @@ def parse_entry(schedule_entry, request_timestamp):
     time_text = split_link[1]
     title = split_link[2]
 
-    append_date(date_text, entry, request_timestamp)
-    append_time(time_text, entry)
+    append_datetime(date_text, time_text, entry, request_timestamp)
     append_title_info(title, entry)
     entry["link"] = "https://www.daserste.de" + str(schedule_entry["href"])
     return entry
 
 
-def append_date(date_text: str, entry, request_date):
+def append_datetime(date_text: str, time_text: str, entry, request_date):
     if "Heute" in date_text:
-        entry["day"] = request_date.day
-        entry["month"] = request_date.month
-        weekdaynum = request_date.weekday()
-        entry["weekday"] = switch_weekday_num[weekdaynum]
+        day = int(request_date.day)
+        month = int(request_date.month)
 
     elif "Morgen" in date_text:
         request_date += timedelta(days=1)
-        entry["day"] = request_date.day
-        entry["month"] = request_date.month
-        weekdaynum = request_date.weekday()
-        entry["weekday"] = switch_weekday_num[weekdaynum]
+        day = int(request_date.day)
+        month = int(request_date.month)
 
     else:
         date = date_text.split(", ")
         date_split = date[1].split(".")
-        entry["day"] = date_split[0]
-        entry["month"] = date_split[1]
-        entry["weekday"] = switch_weekday_abr[date[0][:-1]]
+        day = int(date_split[0])
+        month = int(date_split[1])
 
+    hour = int(time_text[0:2])
+    minute = int(time_text[3:5])
 
-def append_time(time_text: str, entry):
-    entry["time"] = time_text
-    entry["hour"] = time_text[0:2]
-    entry["minute"] = time_text[3:5]
+    entry["time"] = datetime.datetime(
+        2021, month, day, hour, minute, 0, 0, request_date.tzinfo).isoformat()
 
 
 def append_title_info(title_text: str, entry):

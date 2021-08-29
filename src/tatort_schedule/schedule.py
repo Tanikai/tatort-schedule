@@ -10,11 +10,17 @@ TATORT_URL = "https://www.daserste.de/unterhaltung/krimi/tatort/vorschau/index.h
 
 
 def get_tatort():
+    """
+    Returns the current schedule for Tatort.
+    """
     website = load_tatort_website()
     return parse_tatort_website(website)
 
 
 def load_tatort_website() -> str:
+    """
+    Loads the Tatort schedule webiste defined in TATORT_URL.
+    """
     html_file = ""
     with urllib.request.urlopen(TATORT_URL) as response:
         html_file = response.read().decode("utf-8")
@@ -22,6 +28,12 @@ def load_tatort_website() -> str:
 
 
 def parse_tatort_website(html: str):
+    """
+    >>> site = open("../../tests/testdata/20210209.html", "r").read()
+    >>> schedule = parse_tatort_website(site)
+    >>> schedule[0]
+    {'time': '2021-02-07T20:15:00+01:00', 'title': 'Rettung so nah', 'city': 'Dresden', 'inspectors': 'Gorniak, Winkler und Schnabel', 'link': 'https://www.daserste.de/unterhaltung/krimi/tatort/sendung/rettung-so-nah-100.html'}
+    """
     soup = BeautifulSoup(html, "html.parser")  # BSoup-Object for site parsing
     # 0:"nächste Erstausstrahlung" 1:"im Ersten" 2:"in den Dritten" 3:"auf ONE" 4:"Tatort in Ihrem dritten Programm"
     tatort_linklists = soup.find_all("div", class_="linklist")
@@ -49,6 +61,9 @@ def parse_tatort_website(html: str):
 
 
 def parse_schedule(schedule_list, request_timestamp):
+    """
+    Parses a list of schedule strings.
+    """
     schedule = []
     for entry in schedule_list:
         schedule.append(parse_entry(entry, request_timestamp))
@@ -56,6 +71,9 @@ def parse_schedule(schedule_list, request_timestamp):
 
 
 def parse_entry(schedule_entry, request_timestamp):
+    """
+    Parses a schedule string and returns a dict containing the schedule information.
+    """
     entry = {}
     # Example for a link text:
     # So., 14.02. | 20:15 Uhr | Hetzjagd (Odenthal und Stern  (Ludwigshafen))
@@ -79,6 +97,9 @@ def parse_entry(schedule_entry, request_timestamp):
 
 
 def append_datetime(date_text: str, time_text: str, entry, request_date):
+    """
+    Appends datetime information to the entry parameter.
+    """
     if "Heute" in date_text:
         day = int(request_date.day)
         month = int(request_date.month)
@@ -102,6 +123,9 @@ def append_datetime(date_text: str, time_text: str, entry, request_date):
 
 
 def append_title_info(title_text: str, entry):
+    """
+    Appends episode info to the entry parameter.
+    """
     entry["title"] = title_text[:title_text.find("(")-1]
 
     bracket_text = title_text[title_text.find("(")+1:len(title_text)-1]
@@ -113,4 +137,5 @@ def append_title_info(title_text: str, entry):
 
 
 if __name__ == "__main__":
-    print(get_tatort())
+    import doctest
+    doctest.testmod()

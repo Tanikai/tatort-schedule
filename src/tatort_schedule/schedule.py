@@ -1,31 +1,12 @@
 import urllib.request
 import dateutil.parser
 import dateutil.tz
+import datetime
 from bs4 import BeautifulSoup
 from datetime import timedelta
 
 # Global
 TATORT_URL = "https://www.daserste.de/unterhaltung/krimi/tatort/vorschau/index.html"
-
-switch_weekday_num = {
-    0: "Montag",
-    1: "Dienstag",
-    2: "Mittwoch",
-    3: "Donnerstag",
-    4: "Freitag",
-    5: "Samstag",
-    6: "Sonntag"
-}
-
-switch_weekday_abr = {
-    "So": "Sonntag",
-    "Sa": "Samstag",
-    "Fr": "Freitag",
-    "Do": "Donnerstag",
-    "Mi": "Mittwoch",
-    "Di": "Dienstag",
-    "Mo": "Montag"
-}
 
 
 def get_tatort():

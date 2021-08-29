@@ -82,9 +82,9 @@ def append_datetime(date_text: str, time_text: str, entry, request_date):
         month = int(request_date.month)
 
     elif "Morgen" in date_text:
-        request_date += timedelta(days=1)
-        day = int(request_date.day)
-        month = int(request_date.month)
+        tomorrow = request_date + timedelta(days=1)
+        day = int(tomorrow.day)
+        month = int(tomorrow.month)
 
     else:
         date = date_text.split(", ")

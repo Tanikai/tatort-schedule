@@ -134,8 +134,18 @@ def _parse_datetime(date_text: str, time_text: str, request_ts: datetime.datetim
 
 def _parse_title(title_text: str) -> dict:
     """
-    Appends episode info to the entry parameter.
+    Parses the title, city and inspector names from the given string:
+
+    >>> title = "Damian (Tobler und Weber  (Schwarzwald))"
+    >>> title_infos = _parse_title(title)
+    >>> title_infos["title"]
+    'Damian'
+    >>> title_infos["city"]
+    'Schwarzwald'
+    >>> title_infos["inspectors"]
+    'Tobler und Weber'
     """
+
     title_info = {}
     title_info["title"] = title_text[:title_text.find("(")-1]
 

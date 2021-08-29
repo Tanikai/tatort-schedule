@@ -29,16 +29,25 @@ def load_tatort_website() -> str:
 
 def parse_tatort_website(html: str) -> [dict]:
     """
+    Parses the given Tatort website and returns an array of dicts, each
+    containing a schedule entry for the upcoming Tatort episodes.
+
     >>> site = open("../../tests/testdata/20210209.html", "r").read()
     >>> schedule = parse_tatort_website(site)
     >>> schedule[0]
     {'title': 'Rettung so nah', 'city': 'Dresden', 'inspectors': 'Gorniak, Winkler und Schnabel', 'time': '2021-02-07T20:15:00+01:00', 'link': 'https://www.daserste.de/unterhaltung/krimi/tatort/sendung/rettung-so-nah-100.html'}
     """
-    soup = BeautifulSoup(html, "html.parser")  # BSoup-Object for site parsing
-    # 0:"nächste Erstausstrahlung" 1:"im Ersten" 2:"in den Dritten" 3:"auf ONE" 4:"Tatort in Ihrem dritten Programm"
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Found linklists:
+    # 0:"nächste Erstausstrahlung"
+    # 1:"im Ersten"
+    # 2:"in den Dritten"
+    # 3:"auf ONE"
+    # 4:"Tatort in Ihrem dritten Programm"
     tatort_linklists = soup.find_all("div", class_="linklist")
 
-    # Timestamp of website request is between </body> and </html> tag
+    # Timestamp of website request is between </body> and </html> tag:
     # </body><!-- stage-4.deo @ Sun Feb 07 09:16:08 CET 2021 --></html>
     for line in reversed(soup.html.contents):
         at_index = line.find("@")  # look for comment
@@ -113,6 +122,7 @@ def _parse_datetime(date_text: str, time_text: str, request_ts: datetime.datetim
     >>> _parse_datetime("So., 11.07.", "20:15 Uhr", request_ts)
     '2021-07-11T20:15:00+02:00'
     """
+
     if "Heute" in date_text:
         day = int(request_ts.day)
         month = int(request_ts.month)
@@ -159,6 +169,5 @@ def _parse_title(title_text: str) -> dict:
 
 
 if __name__ == "__main__":
-    get_tatort()
     import doctest
     doctest.testmod()

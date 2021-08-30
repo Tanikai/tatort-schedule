@@ -42,6 +42,9 @@ def parse_tatort_website(html: str, schedule=Scheduletype.Erste) -> [dict]:
     >>> schedule = parse_tatort_website(site)
     >>> schedule[0]
     {'title': 'Rettung so nah', 'city': 'Dresden', 'inspectors': 'Gorniak, Winkler und Schnabel', 'time': '2021-02-07T20:15:00+01:00', 'link': 'https://www.daserste.de/unterhaltung/krimi/tatort/sendung/rettung-so-nah-100.html'}
+    >>> schedule = parse_tatort_website(site, Scheduletype.Dritte)
+    >>> schedule[0]
+    {'title': 'Ein FuÃŸ kommt selten allein', 'city': 'MÃ¼nster', 'inspectors': 'Thiel und Boerne', 'channel': 'BR', 'time': '2021-02-09T20:15:00+01:00', 'link': 'https://www.daserste.de/unterhaltung/krimi/tatort/sendung/ein-fuss-kommt-selten-allein-104.html'}
     """
     soup = BeautifulSoup(html, "html.parser")
 
@@ -88,7 +91,7 @@ def _parse_row(schedule_text: str, request_timestamp: datetime.datetime, schedul
 
     A request timestamp has to be passed into the function, because the first column can contain 'Heute' or 'Morgen' (today and tomorrow respectively)
     >>> request_ts = datetime.datetime(2021, 2, 7, 9, 16, 8, 0, dateutil.tz.gettz('Europe/Berlin'))
-    >>> entry = _parse_row(entry_string, request_ts)
+    >>> entry = _parse_row(entry_string, request_ts, Scheduletype.Erste)
 
     The results are returned in a dictionary:
     >>> entry["time"]
@@ -99,6 +102,19 @@ def _parse_row(schedule_text: str, request_timestamp: datetime.datetime, schedul
     'Ludwigshafen'
     >>> entry["inspectors"]
     'Odenthal und Stern'
+
+    >>> entry_string = "Di., 09.02. | 20:15 Uhr | BR | Ein Fuß kommt selten allein (Thiel und Boerne  (Münster))"
+    >>> entry = _parse_row(entry_string, request_ts, Scheduletype.Dritte)
+    >>> entry["time"]
+    '2021-02-09T20:15:00+01:00'
+    >>> entry["title"]
+    'Ein Fuß kommt selten allein'
+    >>> entry["city"]
+    'Münster'
+    >>> entry["inspectors"]
+    'Thiel und Boerne'
+    >>> entry["channel"]
+    'BR'
     """
     columns = schedule_text.split(" | ")
 

@@ -15,12 +15,18 @@ class Scheduletype(IntEnum):
     Dritte = 2
 
 
-def get_tatort() -> [dict]:
+def get_tatort_erste() -> [dict]:
     """
-    Returns the current schedule for Tatort.
+    Returns the current schedule for Tatort on the channel "Das Erste".
     """
-    website = load_tatort_website()
-    return parse_tatort_website(website)
+    return parse_tatort_website(load_tatort_website(), Scheduletype.Erste)
+
+
+def get_tatort_dritte() -> [dict]:
+    """
+    Returns the current schedule for Tatort on other channels.
+    """
+    return parse_tatort_website(load_tatort_website(), Scheduletype.Dritte)
 
 
 def load_tatort_website() -> str:
@@ -48,7 +54,7 @@ def parse_tatort_website(html: str, schedule=Scheduletype.Erste) -> [dict]:
     """
     soup = BeautifulSoup(html, "html.parser")
 
-    # Timestamp of website request is between </body> and </html> tag:
+    # Timestamp of website request is between </body> and </html> tag, e.g.
     # </body><!-- stage-4.deo @ Sun Feb 07 09:16:08 CET 2021 --></html>
     for line in reversed(soup.html.contents):
         at_index = line.find("@")  # look for comment

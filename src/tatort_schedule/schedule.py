@@ -4,9 +4,15 @@ import dateutil.tz
 import datetime
 from bs4 import BeautifulSoup
 from datetime import timedelta
+from enum import IntEnum
 
 # Global
 TATORT_URL = "https://www.daserste.de/unterhaltung/krimi/tatort/vorschau/index.html"
+
+
+class Scheduletype(IntEnum):
+    Erste = 1
+    Dritte = 2
 
 
 def get_tatort() -> [dict]:
@@ -27,7 +33,7 @@ def load_tatort_website() -> str:
     return html_file
 
 
-def parse_tatort_website(html: str) -> [dict]:
+def parse_tatort_website(html: str, schedule=Scheduletype.Erste) -> [dict]:
     """
     Parses the given Tatort website and returns an array of dicts, each
     containing a schedule entry for the upcoming Tatort episodes.
@@ -38,14 +44,6 @@ def parse_tatort_website(html: str) -> [dict]:
     {'title': 'Rettung so nah', 'city': 'Dresden', 'inspectors': 'Gorniak, Winkler und Schnabel', 'time': '2021-02-07T20:15:00+01:00', 'link': 'https://www.daserste.de/unterhaltung/krimi/tatort/sendung/rettung-so-nah-100.html'}
     """
     soup = BeautifulSoup(html, "html.parser")
-
-    # Found linklists:
-    # 0:"nächste Erstausstrahlung"
-    # 1:"im Ersten"
-    # 2:"in den Dritten"
-    # 3:"auf ONE"
-    # 4:"Tatort in Ihrem dritten Programm"
-    tatort_linklists = soup.find_all("div", class_="linklist")
 
     # Timestamp of website request is between </body> and </html> tag:
     # </body><!-- stage-4.deo @ Sun Feb 07 09:16:08 CET 2021 --></html>
@@ -65,10 +63,17 @@ def parse_tatort_website(html: str) -> [dict]:
     except Exception as e:
         request_timestamp = datetime.now()
 
-    tatort_im_ersten_list = tatort_linklists[1].find_all("a")
+    # Found linklists:
+    # 0:"nächste Erstausstrahlung"
+    # 1:"im Ersten"
+    # 2:"in den Dritten"
+    # 3:"auf ONE"
+    # 4:"Tatort in Ihrem dritten Programm"
+    tatort_linklists = soup.find_all("div", class_="linklist")
+    tatort_list = tatort_linklists[int(schedule)].find_all("a")
     schedule_list = []
-    for link in tatort_im_ersten_list:
-        entry = _parse_row(link.string, request_timestamp)
+    for link in tatort_list:
+        entry = _parse_row(link.string, request_timestamp, schedule)
         entry["link"] = link["href"]
         if not "https://www.daserste.de" in entry["link"]:
             entry["link"] = "https://www.daserste.de" + entry["link"]
@@ -76,7 +81,7 @@ def parse_tatort_website(html: str) -> [dict]:
     return schedule_list
 
 
-def _parse_row(schedule_text: str, request_timestamp: datetime.datetime) -> dict:
+def _parse_row(schedule_text: str, request_timestamp: datetime.datetime, schedule: Scheduletype) -> dict:
     """
     Parses a row in the Tatort schedule, for example:
     >>> entry_string = "So., 14.02. | 20:15 Uhr | Hetzjagd (Odenthal und Stern  (Ludwigshafen))"
@@ -96,7 +101,12 @@ def _parse_row(schedule_text: str, request_timestamp: datetime.datetime) -> dict
     'Odenthal und Stern'
     """
     columns = schedule_text.split(" | ")
-    entry = _parse_title(columns[2])
+
+    if schedule == Scheduletype.Erste:
+        entry = _parse_title(columns[2])
+    elif schedule == Scheduletype.Dritte:
+        entry = _parse_title(columns[3])
+        entry["channel"] = columns[2]
     entry["time"] = _parse_datetime(columns[0], columns[1], request_timestamp)
     return entry
 

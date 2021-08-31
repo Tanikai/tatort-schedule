@@ -79,7 +79,8 @@ def parse_tatort_website(html: str, schedule=Scheduletype.Erste) -> [dict]:
     # 3:"auf ONE"
     # 4:"Tatort in Ihrem dritten Programm"
     tatort_linklists = soup.find_all("div", class_="linklist")
-    tatort_list = tatort_linklists[int(schedule)].find_all("a")
+    index_offset = len(tatort_linklists) - 5 # sometimes there are more than 5 entries
+    tatort_list = tatort_linklists[int(schedule) + index_offset].find_all("a")
     schedule_list = []
     for link in tatort_list:
         entry = _parse_row(link.string, request_timestamp, schedule)

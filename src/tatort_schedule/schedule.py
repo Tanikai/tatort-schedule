@@ -1,9 +1,8 @@
 import urllib.request
 import dateutil.parser
 import dateutil.tz
-import datetime
 from bs4 import BeautifulSoup
-from datetime import timedelta
+from datetime import datetime, timedelta
 from enum import IntEnum
 
 # Global
@@ -47,10 +46,10 @@ def parse_tatort_website(html: str, schedule=Scheduletype.Erste) -> [dict]:
     >>> site = open("../../tests/testdata/20210209.html", "r").read()
     >>> schedule = parse_tatort_website(site)
     >>> schedule[0]
-    {'title': 'Rettung so nah', 'city': 'Dresden', 'inspectors': 'Gorniak, Winkler und Schnabel', 'time': '2021-02-07T20:15:00+01:00', 'link': 'https://www.daserste.de/unterhaltung/krimi/tatort/sendung/rettung-so-nah-100.html'}
+    {'city': 'Dresden', 'inspectors': 'Gorniak, Winkler und Schnabel', 'title': 'Rettung so nah', 'time': '2021-02-07T20:15:00+01:00', 'link': 'https://www.daserste.de/unterhaltung/krimi/tatort/sendung/rettung-so-nah-100.html'}
     >>> schedule = parse_tatort_website(site, Scheduletype.Dritte)
     >>> schedule[0]
-    {'title': 'Ein FuÃŸ kommt selten allein', 'city': 'MÃ¼nster', 'inspectors': 'Thiel und Boerne', 'channel': 'BR', 'time': '2021-02-09T20:15:00+01:00', 'link': 'https://www.daserste.de/unterhaltung/krimi/tatort/sendung/ein-fuss-kommt-selten-allein-104.html'}
+    {'city': 'MÃ¼nster', 'inspectors': 'Thiel und Boerne', 'title': 'Ein FuÃŸ kommt selten allein', 'channel': 'BR', 'time': '2021-02-09T20:15:00+01:00', 'link': 'https://www.daserste.de/unterhaltung/krimi/tatort/sendung/ein-fuss-kommt-selten-allein-104.html'}
     """
     soup = BeautifulSoup(html, "html.parser")
 
@@ -69,7 +68,7 @@ def parse_tatort_website(html: str, schedule=Scheduletype.Erste) -> [dict]:
     try:
         request_timestamp = dateutil.parser.parse(
             timestamp_text, tzinfos=tzmapping)
-    except Exception as e:
+    except Exception:
         request_timestamp = datetime.now()
 
     # Found linklists:
@@ -79,7 +78,8 @@ def parse_tatort_website(html: str, schedule=Scheduletype.Erste) -> [dict]:
     # 3:"auf ONE"
     # 4:"Tatort in Ihrem dritten Programm"
     tatort_linklists = soup.find_all("div", class_="linklist")
-    index_offset = len(tatort_linklists) - 5 # sometimes there are more than 5 entries
+    # sometimes there are more than 5 entries
+    index_offset = len(tatort_linklists) - 5
     tatort_list = tatort_linklists[int(schedule) + index_offset].find_all("a")
     schedule_list = []
     for link in tatort_list:
@@ -91,13 +91,13 @@ def parse_tatort_website(html: str, schedule=Scheduletype.Erste) -> [dict]:
     return schedule_list
 
 
-def _parse_row(schedule_text: str, request_timestamp: datetime.datetime, schedule: Scheduletype) -> dict:
+def _parse_row(schedule_text: str, request_timestamp: datetime, schedule: Scheduletype) -> dict:
     """
     Parses a row in the Tatort schedule, for example:
     >>> entry_string = "So., 14.02. | 20:15 Uhr | Hetzjagd (Odenthal und Stern  (Ludwigshafen))"
 
     A request timestamp has to be passed into the function, because the first column can contain 'Heute' or 'Morgen' (today and tomorrow respectively)
-    >>> request_ts = datetime.datetime(2021, 2, 7, 9, 16, 8, 0, dateutil.tz.gettz('Europe/Berlin'))
+    >>> request_ts = datetime(2021, 2, 7, 9, 16, 8, 0, dateutil.tz.gettz('Europe/Berlin'))
     >>> entry = _parse_row(entry_string, request_ts, Scheduletype.Erste)
 
     The results are returned in a dictionary:
@@ -134,11 +134,11 @@ def _parse_row(schedule_text: str, request_timestamp: datetime.datetime, schedul
     return entry
 
 
-def _parse_datetime(date_text: str, time_text: str, request_ts: datetime.datetime) -> datetime.datetime:
+def _parse_datetime(date_text: str, time_text: str, request_ts: datetime) -> datetime:
     """
     Returns a datetime object containing info from date_text and time_text:
 
-    >>> request_ts = datetime.datetime(2021, 2, 7, 9, 16, 8, 0, dateutil.tz.gettz('Europe/Berlin'))
+    >>> request_ts = datetime(2021, 2, 7, 9, 16, 8, 0, dateutil.tz.gettz('Europe/Berlin'))
     >>> _parse_datetime("So., 14.02.", "20:15 Uhr", request_ts)
     '2021-02-14T20:15:00+01:00'
 
@@ -172,14 +172,14 @@ def _parse_datetime(date_text: str, time_text: str, request_ts: datetime.datetim
     hour = int(time_text[0:2])
     minute = int(time_text[3:5])
 
-    return datetime.datetime(2021, month, day, hour, minute, 0, 0, request_ts.tzinfo).isoformat()
+    return datetime(2021, month, day, hour, minute, 0, 0, request_ts.tzinfo).isoformat()
 
 
 def _parse_title(title_text: str) -> dict:
     """
     Parses the title, city and inspector names from the given string:
 
-    >>> title = "Damian (Tobler und Weber  (Schwarzwald))"
+    >>> title = "  Damian  (    Tobler und Weber   (   Schwarzwald   )  )  "
     >>> title_infos = _parse_title(title)
     >>> title_infos["title"]
     'Damian'
@@ -187,17 +187,28 @@ def _parse_title(title_text: str) -> dict:
     'Schwarzwald'
     >>> title_infos["inspectors"]
     'Tobler und Weber'
+
+    >>> title = "In der Familie (1) (Batic, Leitmayr und Kalli mit Faber, Bönisch, Dalay, Pawlak (München, Dortmund))"
+    >>> title_infos = _parse_title(title)
+    >>> title_infos["title"]
+    'In der Familie (1)'
+    >>> title_infos["city"]
+    'München, Dortmund'
+    >>> title_infos["inspectors"]
+    'Batic, Leitmayr und Kalli mit Faber, Bönisch, Dalay, Pawlak'
     """
 
     title_info = {}
-    title_info["title"] = title_text[:title_text.find("(")-1]
+    # parse backwards
+    city_begin = title_text.rfind("(")+1
+    city_end = title_text.find(")", city_begin)
+    title_info["city"] = title_text[city_begin:city_end].strip()
 
-    bracket_text = title_text[title_text.find("(")+1:len(title_text)-1]
+    inspector_begin = title_text.rfind("(", 0, city_begin-1) + 1
+    title_info["inspectors"] = title_text[inspector_begin:city_begin-2].strip()
 
-    city_text = bracket_text[bracket_text.rfind("(")+1:len(bracket_text)-1]
-    title_info["city"] = city_text
+    title_info["title"] = title_text[:inspector_begin-2].strip()
 
-    title_info["inspectors"] = bracket_text[:-len(city_text)-4]
     return title_info
 
 

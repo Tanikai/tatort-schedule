@@ -138,41 +138,44 @@ def _parse_datetime(date_text: str, time_text: str, request_ts: datetime) -> dat
     """
     Returns a datetime object containing info from date_text and time_text:
 
-    >>> request_ts = datetime(2021, 2, 7, 9, 16, 8, 0, dateutil.tz.gettz('Europe/Berlin'))
+    >>> request_ts = datetime(2020, 2, 7, 9, 16, 8, 0, dateutil.tz.gettz('Europe/Berlin'))
     >>> _parse_datetime("So., 14.02.", "20:15 Uhr", request_ts)
-    '2021-02-14T20:15:00+01:00'
+    '2020-02-14T20:15:00+01:00'
 
     When the new Tatort episode is coming today, the date of the request
     timestamp is used:
     >>> _parse_datetime("Heute", "20:15 Uhr", request_ts)
-    '2021-02-07T20:15:00+01:00'
+    '2020-02-07T20:15:00+01:00'
 
     Same thing with tomorrow:
     >>> _parse_datetime("Morgen", "20:15 Uhr", request_ts)
-    '2021-02-08T20:15:00+01:00'
+    '2020-02-08T20:15:00+01:00'
 
     During summertime / CEST, the timezone in the timestamp is UTC+2:
     >>> _parse_datetime("So., 11.07.", "20:15 Uhr", request_ts)
-    '2021-07-11T20:15:00+02:00'
+    '2020-07-11T20:15:00+02:00'
     """
 
     if "Heute" in date_text:
         day = int(request_ts.day)
         month = int(request_ts.month)
+        year = int(request_ts.year)
     elif "Morgen" in date_text:
         tomorrow = request_ts + timedelta(days=1)
         day = int(tomorrow.day)
         month = int(tomorrow.month)
+        year = int(tomorrow.year)
     else:
         date = date_text.split(", ")
         date_split = date[1].split(".")
         day = int(date_split[0])
         month = int(date_split[1])
+        year = int(request_ts.year)
 
     hour = int(time_text[0:2])
     minute = int(time_text[3:5])
 
-    return datetime(2021, month, day, hour, minute, 0, 0, request_ts.tzinfo).isoformat()
+    return datetime(year, month, day, hour, minute, 0, 0, request_ts.tzinfo).isoformat()
 
 
 def _parse_title(title_text: str) -> dict:
